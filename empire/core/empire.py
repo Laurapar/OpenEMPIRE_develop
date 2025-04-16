@@ -137,8 +137,15 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
     if DLCMODULE:
         # Sub-set of storage related to DR
         data.load(filename=str(tab_file_path / 'DLCModule/DLCSets_Storage.tab'), format="set", set=model.StorageDLC)
-        data.load(filename=str(tab_file_path / 'DLCModule/DLCSets_StorageAdvance.tab'), format="set", set=model.StorageAdvanceDLC)  
-        data.load(filename=str(tab_file_path / 'DLCModule/DLCSets_StorageDelay.tab'), format="set", set=model.StorageDelayDLC)  
+    # The following line has been added because there is a bug in DataPortal for reading empty sets, and there are no offshore nodes in all datasets.
+        if pandas.read_csv(tab_file_path / 'DLCModule/DLCSets_StorageAdvance.tab').shape[0] > 0:
+            data.load(filename=str(tab_file_path / 'DLCModule/DLCSets_StorageAdvance.tab'), format="set", set=model.StorageAdvanceDLC)
+        else:
+            logger.info("Warning: The are no only advance possibilities")
+        if pandas.read_csv(tab_file_path / 'DLCModule/DLCSets_StorageAdvance.tab').shape[0] > 0:
+            data.load(filename=str(tab_file_path / 'DLCModule/DLCSets_StorageDelay.tab'), format="set", set=model.StorageDelayDLC)  
+        else:
+            logger.info("Warning: The are no only delaying possibilities")
         data.load(filename=str(tab_file_path / 'DLCModule/DLCSets_DependentStorage.tab'), format="set", set=model.DependentStorageDLC)
         data.load(filename=str(tab_file_path / 'DLCModule/DLCSets_StorageOfNodes.tab'), format="set", set=model.StoragesOfNodeDLC)
 
