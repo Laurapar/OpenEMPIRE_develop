@@ -202,6 +202,7 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
     model.transmissionInitCap = Param(model.BidirectionalArc, model.Period, default=0.0, mutable=True)
     model.storPWInitCap = Param(model.StoragesOfNode, model.Period, default=0.0, mutable=True)
     model.storENInitCap = Param(model.StoragesOfNode, model.Period, default=0.0, mutable=True)
+    model.genMinBuiltCap = Param(model.Node, model.Technology, model.Period, default=0.0, mutable=True)
     model.genMaxBuiltCap = Param(model.Node, model.Technology, model.Period, default=500000.0, mutable=True)
     model.transmissionMaxBuiltCap = Param(model.BidirectionalArc, model.Period, default=20000.0, mutable=True)
     model.storPWMaxBuiltCap = Param(model.StoragesOfNode, model.Period, default=500000.0, mutable=True)
@@ -262,6 +263,7 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
     data.load(filename=str(tab_file_path / 'Generator_ScaleFactorInitialCap.tab'), param=model.genScaleInitCap, format="table")
     data.load(filename=str(tab_file_path / 'Generator_InitialCapacity.tab'), param=model.genInitCap, format="table") #node_generator_intial_capacity.xlsx
     data.load(filename=str(tab_file_path / 'Generator_MaxBuiltCapacity.tab'), param=model.genMaxBuiltCap, format="table")#?
+    data.load(filename=str(tab_file_path / 'Generator_MinBuiltCapacity.tab'), param=model.genMinBuiltCap, format="table")
     data.load(filename=str(tab_file_path / 'Generator_MaxInstalledCapacity.tab'), param=model.genMaxInstalledCapRaw, format="table")#maximum_capacity_constraint_040317_high
     data.load(filename=str(tab_file_path / 'Generator_CO2Content.tab'), param=model.genCO2TypeFactor, format="table")
     data.load(filename=str(tab_file_path / 'Generator_RampRate.tab'), param=model.genRampUpCap, format="table")
@@ -767,6 +769,12 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
 
         ############################################################
 
+        def investment_gen_min_cap_rule(model, t, n, i):
+            return sum(model.genInvCap[n,g,i] for g in model.Generator if (n,g) in model.GeneratorsOfNode and (t,g) in model.GeneratorsOfTechnology) - model.genMinBuiltCap[n,t,i] >= 0
+        model.investment_gen_min_cap = Constraint(model.Technology, model.Node, model.PeriodActive, rule=investment_gen_min_cap_rule)
+
+        ############################################################
+        
         def investment_trans_cap_rule(model, n1, n2, i):
             return model.transmisionInvCap[n1,n2,i] - model.transmissionMaxBuiltCap[n1,n2,i] <= 0
         model.investment_trans_cap = Constraint(model.BidirectionalArc, model.PeriodActive, rule=investment_trans_cap_rule)
@@ -846,7 +854,7 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
         logger.info("StorageTypes: %s", len(instance.Storage))
         logger.info("TotalStorages: %s", len(instance.StoragesOfNode))
         logger.info("")
-        logger.info("InvestmentUntil: %s", value(2020+int(len(instance.PeriodActive)*LeapYearsInvestment)))
+        logger.info("InvestmentUntil: %s", value(2025+int(len(instance.PeriodActive)*LeapYearsInvestment)))
         logger.info("Scenarios: %s", len(instance.Scenario))
         logger.info("TotalOperationalHoursPerScenario: %s", len(instance.Operationalhour))
         logger.info("TotalOperationalHoursPerInvYear: %s", len(instance.Operationalhour)*len(instance.Scenario))
@@ -951,7 +959,7 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
     
     inv_per = []
     for i in instance.PeriodActive:
-        my_string = str(value(2020+int(i-1)*LeapYearsInvestment))+"-"+str(value(2020+int(i)*LeapYearsInvestment))
+        my_string = str(value(2025+int(i-1)*LeapYearsInvestment))+"-"+str(value(2025+int(i)*LeapYearsInvestment))
         inv_per.append(my_string)
 
     f = open(result_file_path / 'results_output_gen.csv', 'w', newline='')
@@ -1335,12 +1343,12 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
                            "LigniteCCSsup": "Lignite|w/ CCS"}
         
         #Make datetime from HoursOfSeason       
-        seasonstart={"winter": '2020-01-01',
-                     "spring": '2020-04-01',
-                     "summer": '2020-07-01',
-                     "fall": '2020-10-01',
-                     "peak1": '2020-11-01',
-                     "peak2": '2020-12-01'}
+        seasonstart={"winter": '2025-01-01',
+                     "spring": '2025-04-01',
+                     "summer": '2025-07-01',
+                     "fall": '2025-10-01',
+                     "peak1": '2025-11-01',
+                     "peak2": '2025-12-01'}
         
         seasonhours=[]
     
@@ -1370,11 +1378,11 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
 
         logger.info("Writing standard output to .csv...")
         
-        f = pd.DataFrame(columns=["model", "scenario", "region", "variable", "unit", "subannual"]+[value(2020+(i)*instance.LeapYearsInvestment) for i in instance.PeriodActive])
+        f = pd.DataFrame(columns=["model", "scenario", "region", "variable", "unit", "subannual"]+[value(2025+(i)*instance.LeapYearsInvestment) for i in instance.PeriodActive])
 
         def row_write(df, region, variable, unit, subannual, input_value, scenario=Scenario, modelname=Modelname):
             df2 = pd.DataFrame([[modelname, scenario, region, variable, unit, subannual]+input_value],
-                               columns=["model", "scenario", "region", "variable", "unit", "subannual"]+[value(2020+(i)*instance.LeapYearsInvestment) for i in instance.PeriodActive])
+                               columns=["model", "scenario", "region", "variable", "unit", "subannual"]+[value(2025+(i)*instance.LeapYearsInvestment) for i in instance.PeriodActive])
             df = pd.concat([df, df2], ignore_index=True)
             return df
 

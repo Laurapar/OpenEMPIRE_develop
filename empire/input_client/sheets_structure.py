@@ -26,6 +26,7 @@ sheets = {
         "ScaleFactorInitialCap",
         "InitialCapacity",
         "MaxBuiltCapacity",
+        "MinBuiltCapacity",
         "MaxInstalledCapacity",
         "RampRate",
         "GeneratorTypeAvailability",
