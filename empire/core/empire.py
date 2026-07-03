@@ -825,6 +825,16 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
         model.power_energy_relate = Constraint(model.StoragesOfNode, model.PeriodActive, rule=power_energy_relate_rule)
 
     #################################################################
+        def node_generation_growth_rule(model, n, i, w):
+                if (i-1) not in model.PeriodActive:
+                    return Constraint.Skip
+                currentGen = sum(model.seasScale[s]*model.genOperational[n,g,h,i,w] \
+                    for g in model.Generator if (n,g) in model.GeneratorsOfNode for (s,h) in model.HoursOfSeason)
+                previousAvgGen = sum(model.sceProbab[w2]*model.seasScale[s]*model.genOperational[n,g,h,i-1,w2] \
+                    for g in model.Generator if (n,g) in model.GeneratorsOfNode for (s,h) in model.HoursOfSeason for w2 in model.Scenario)
+                return currentGen - 1.2*previousAvgGen <= 0
+        model.node_generation_growth = Constraint(model.Node, model.PeriodActive, model.Scenario, rule=node_generation_growth_rule)
+
 
     #######
     ##RUN##
