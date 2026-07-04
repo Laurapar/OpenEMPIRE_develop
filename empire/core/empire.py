@@ -687,6 +687,18 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
 
     #################################################################
 
+    def node_generation_growth_rule(model, n, i, w):
+                if (i-1) not in model.PeriodActive:
+                    return Constraint.Skip
+                currentGen = sum(model.seasScale[s]*model.genOperational[n,g,h,i,w] \
+                    for g in model.Generator if (n,g) in model.GeneratorsOfNode for (s,h) in model.HoursOfSeason)
+                previousAvgGen = sum(model.sceProbab[w2]*model.seasScale[s]*model.genOperational[n,g,h,i-1,w2] \
+                    for g in model.Generator if (n,g) in model.GeneratorsOfNode for (s,h) in model.HoursOfSeason for w2 in model.Scenario)
+                return currentGen - 1.2*previousAvgGen <= 0
+    model.node_generation_growth = Constraint(model.Node, model.PeriodActive, model.Scenario, rule=node_generation_growth_rule)
+
+    #################################################################
+    
     if north_sea:
         def wind_farm_tranmission_cap_rule(model, n1, n2, i):
             if n1 in model.OffshoreNode or n2 in model.OffshoreNode:
