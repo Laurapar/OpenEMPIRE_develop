@@ -32,6 +32,7 @@ sheets = {
         "GeneratorTypeAvailability",
         "CO2Content",
         "Lifetime",
+        "YearlyAvailability"
     ],
     "Node": ["ElectricAnnualDemand", "NodeLostLoadCost", "HydroGenMaxAnnualProduction"],
     "Transmission": [

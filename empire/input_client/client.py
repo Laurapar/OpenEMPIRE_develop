@@ -243,6 +243,12 @@ class GeneratorClient(BaseClient):
 
     def set_lifetime(self, df: pd.DataFrame):
         self._write_to_sheet(df, self.file, "Lifetime")
+    
+    def get_yearly_availability(self):
+        return self._read_from_sheet(self.file, "YearlyAvailability", usecols=[0, 1, 2, 3])
+
+    def set_yearly_availability(self, df: pd.DataFrame):
+        self._write_to_sheet(df, self.file, "YearlyAvailability")
 
 
 class NodeClient(BaseClient):

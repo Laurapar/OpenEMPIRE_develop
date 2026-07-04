@@ -236,6 +236,7 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
     model.sloadAnnualDemand = Param(model.Node, model.Period, default=0.0, mutable=True)
     model.sload = Param(model.Node, model.Operationalhour, model.Period, model.Scenario, default=0.0, mutable=True)
     model.genCapAvailTypeRaw = Param(model.Generator, default=1.0, mutable=True)
+    model.genYearlyAvailability = Param(model.GeneratorsOfNode, model.Period, default=1.0, mutable=True)
     model.genCapAvailStochRaw = Param(model.GeneratorsOfNode, model.Operationalhour, model.Scenario, model.Period, default=0.0, mutable=True)
     model.genCapAvail = Param(model.GeneratorsOfNode, model.Operationalhour, model.Scenario, model.Period, default=0.0, mutable=True)
     model.maxRegHydroGenRaw = Param(model.Node, model.Period, model.HoursOfSeason, model.Scenario, default=0.0, mutable=True)
@@ -268,6 +269,7 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
     data.load(filename=str(tab_file_path / 'Generator_CO2Content.tab'), param=model.genCO2TypeFactor, format="table")
     data.load(filename=str(tab_file_path / 'Generator_RampRate.tab'), param=model.genRampUpCap, format="table")
     data.load(filename=str(tab_file_path / 'Generator_GeneratorTypeAvailability.tab'), param=model.genCapAvailTypeRaw, format="table")
+    data.load(filename=str(tab_file_path / 'Generator_YearlyAvailability.tab'), param=model.genYearlyAvailability, format="table")
     data.load(filename=str(tab_file_path / 'Generator_Lifetime.tab'), param=model.genLifetime, format="table") 
 
     logger.info("Reading parameters for Transmission...")
@@ -602,7 +604,7 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
     #################################################################
 
     def genMaxProd_rule(model, n, g, h, i, w):
-            return model.genOperational[n,g,h,i,w] - model.genCapAvail[n,g,h,w,i]*model.genInstalledCap[n,g,i] <= 0
+            return model.genOperational[n,g,h,i,w] - model.genYearlyAvailability[n,g,i]*model.genCapAvail[n,g,h,w,i]*model.genInstalledCap[n,g,i] <= 0
     model.maxGenProduction = Constraint(model.GeneratorsOfNode, model.Operationalhour, model.PeriodActive, model.Scenario, rule=genMaxProd_rule)
 
     #################################################################
