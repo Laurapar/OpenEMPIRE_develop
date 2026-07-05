@@ -242,6 +242,7 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
     model.maxRegHydroGenRaw = Param(model.Node, model.Period, model.HoursOfSeason, model.Scenario, default=0.0, mutable=True)
     model.maxRegHydroGen = Param(model.Node, model.Period, model.Season, model.Scenario, default=0.0, mutable=True)
     model.maxHydroNode = Param(model.Node, default=0.0, mutable=True)
+    model.maxBiomassNode = Param(model.Node, model.Period, default=0.0, mutable=True)
     model.storOperationalInit = Param(model.Storage, default=0.0, mutable=True) #Percentage of installed energy capacity initially
 
     if EMISSION_CAP:
@@ -304,6 +305,7 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
     data.load(filename=str(tab_file_path / 'Node_NodeLostLoadCost.tab'), param=model.nodeLostLoadCost, format="table")
     data.load(filename=str(tab_file_path / 'Node_ElectricAnnualDemand.tab'), param=model.sloadAnnualDemand, format="table") 
     data.load(filename=str(tab_file_path / 'Node_HydroGenMaxAnnualProduction.tab'), param=model.maxHydroNode, format="table") 
+    data.load(filename=str(tab_file_path / 'Node_BiomassMaxAnnualActivity.tab'), param=model.maxBiomassNode, format="table")
     
     logger.info("Reading parameters for Stochastic...")
 
@@ -698,7 +700,22 @@ def run_empire(name, tab_file_path: Path, result_file_path: Path, scenario_data_
     model.node_generation_growth = Constraint(model.Node, model.PeriodActive, model.Scenario, rule=node_generation_growth_rule)
 
     #################################################################
-    
+
+    def biomass_usage_rule(model, i):
+            empire_biomass_production = sum(
+                model.seasScale[s] * model.sceProbab[w] * model.genOperational[n, g, h, i, w]
+                for (n, g) in model.GeneratorsOfNode
+                if g in ['Bio', 'BioCCS']
+                for (s, h) in model.HoursOfSeason
+                for w in model.Scenario
+            )
+            genesys_biomass_production = sum(model.maxBiomassNode[n, i] for n in model.Node)
+            return empire_biomass_production - 1.1 * genesys_biomass_production <= 0
+
+    model.biomass_usage_limit = Constraint(model.PeriodActive, rule=biomass_usage_rule)
+
+    #################################################################
+
     if north_sea:
         def wind_farm_tranmission_cap_rule(model, n1, n2, i):
             if n1 in model.OffshoreNode or n2 in model.OffshoreNode:

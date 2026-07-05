@@ -34,7 +34,7 @@ sheets = {
         "Lifetime",
         "YearlyAvailability"
     ],
-    "Node": ["ElectricAnnualDemand", "NodeLostLoadCost", "HydroGenMaxAnnualProduction"],
+    "Node": ["ElectricAnnualDemand", "NodeLostLoadCost", "HydroGenMaxAnnualProduction", "BiomassMaxAnnualActivity"],
     "Transmission": [
         "lineEfficiency",
         "MaxBuiltCapacity",

@@ -279,6 +279,13 @@ class NodeClient(BaseClient):
 
     def set_hydro_generators_max_annual_production(self, df: pd.DataFrame):
         self._write_to_sheet(df, self.file, "HydroGenMaxAnnualProduction")
+    
+    def get_biomass_max_annual_activity(self):
+        return self._read_from_sheet(self.file, "BiomassMaxAnnualActivity")
+
+    def set_biomass_max_annual_activity(self, df: pd.DataFrame):
+        self._write_to_sheet(df, self.file, "BiomassMaxAnnualActivity")
+
 
 
 class TransmissionClient(BaseClient):
